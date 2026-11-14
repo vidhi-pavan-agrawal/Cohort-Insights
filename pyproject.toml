@@ -1,0 +1,50 @@
+[project]
+name = "cohort-insights-api"
+version = "1.0.0"
+description = "Cohort Insights API: document ingestion with a two-stage simulated async pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+    "pymongo>=4.13,<5",
+    "redis>=5.0,<7",
+    "structlog>=24.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "asgi-lifespan>=2.1",
+]
+dev = [
+    "cohort-insights-api[test]",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = ["integration: requires MongoDB and Redis"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "BLE", "SIM", "RUF"]
+ignore = [
+    "B008",   # FastAPI Depends() in defaults is idiomatic
+    "SIM905", # a split() word list is more readable than a 100-item literal
+]
