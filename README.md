@@ -249,3 +249,12 @@ For a document id or ref that isn't yours, the API returns **404**, the same res
 **Redis limiter at 100× QPS.** The per-user hash plus Lua design still holds. Each script touches exactly one key, so it is Redis Cluster–safe, and load spreads across slots by user. Three things change. First, reconciliation currently `SCAN`s every key and lists every active Mongo document; at scale I'd make it event-driven (a change stream emitting releases) or sample per user. Second, release-on-completion is best effort; I'd move it into an outbox so leaks stop depending on TTL. Third, very hot tenants get a local token bucket in front of the cluster, so a misbehaving partner can't saturate one slot. In degraded mode the Mongo-count fallback isn't atomic; at that scale I'd fail closed (429) for users near the limit rather than over-admit.
 
 **Pagination.** Skip/limit no longer works, for two reasons: the cost is linear in depth, and results drift (inserts shift pages, so items repeat or go missing). I'd use **keyset (cursor) pagination** on the existing index: `?cursor=<opaque base64(created_at,_id)>` with `{user_id, $or: [{created_at < c}, {created_at = c, _id < id}]}`, sorted `created_at -1, _id -1`. That is an O(page_size) index range scan on any page. Exact `total` would become optional or approximate (cached per user, or `has_next` from fetching `limit+1`).
+
+
+<img width="1728" height="1001" alt="Screenshot 2026-11-14 at 4 23 20 PM" src="https://github.com/user-attachments/assets/9fbdc62e-9509-487d-9c0e-d02a90236fa5" />
+<img width="1676" height="786" alt="Screenshot 2026-11-14 at 4 22 22 PM" src="https://github.com/user-attachments/assets/7259c851-bfb1-4f94-b29a-9fdf5b549ccf" />
+<img width="1320" height="1039" alt="Screenshot 2026-11-14 at 4 22 04 PM" src="https://github.com/user-attachments/assets/18682750-641d-44fa-9823-03f6156a08fe" />
+<img width="1493" height="287" alt="Screenshot 2026-11-14 at 8 46 56 PM" src="https://github.com/user-attachments/assets/3d1b0f82-a833-4332-a26f-e9c85c9bffe3" />
+
+
+
